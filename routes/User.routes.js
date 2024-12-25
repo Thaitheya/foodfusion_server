@@ -6,34 +6,31 @@ const bcrypt = require("bcryptjs");
 const { UserModel } = require("../src/models/user.model");
 const { BAD_REQUEST, SUCCESS } = require("../src/constants/httpStatus");
 const PASSWORD_HASH_SALT = 10;
+const Auth = require("../src/middleware/Auth.mid");
 const jwtSecret = process.env.JWT_SECRET;
 
-router.post (
-  '/register',
-  handler(async(req, res)=> {
-    const {name, email, password, address} = req.body;
-    const user = await UserModel.findOne({email});;
-    if(user) {
-      res.status(BAD_REQUEST).json({message: "User Already Exist"});
+router.post(
+  "/register",
+  handler(async (req, res) => {
+    const { name, email, password, address } = req.body;
+    const user = await UserModel.findOne({ email });
+    if (user) {
+      res.status(BAD_REQUEST).json({ message: "User Already Exist" });
       return;
     }
-    const hashPassword = await bcrypt.hash(
-      password,
-      PASSWORD_HASH_SALT
-    )
+    const hashPassword = await bcrypt.hash(password, PASSWORD_HASH_SALT);
 
     const newUser = {
       name,
       email: email.toLowerCase(),
       password: hashPassword,
       address,
-    }
-    console.log(newUser)
+    };
+    console.log(newUser);
     const result = await UserModel.create(newUser);
     res.send(generateTokenResponse(result));
-
   })
-)
+);
 router.post(
   "/login",
   handler(async (req, res) => {
@@ -60,6 +57,41 @@ router.post(
       .json({ message: "Username or Password is invalid" });
   })
 );
+
+router.put(
+  "/updateProfile",
+  Auth,
+  handler(async (req, res) => {
+    const { name, address } = req.body;
+
+    // Validate input
+    if (!name || name.length < 3) {
+      return res.status(BAD_REQUEST).json({ message: "Invalid name" });
+    }
+    if (!address || address.length < 10) {
+      return res.status(BAD_REQUEST).json({ message: "Invalid address" });
+    }
+
+    try {
+      const user = await UserModel.findByIdAndUpdate(
+        req.user.id, // Ensure req.user.id is populated correctly by Auth middleware
+        { name, address },
+        { new: true } // Return the updated user document
+      );
+
+      if (!user) {
+        return res.status(BAD_REQUEST).json({ message: "User not found" });
+      }
+
+      res.json(generateTokenResponse(user));
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      res.status(BAD_REQUEST).json({ message: "Failed to update profile" });
+    }
+  })
+);
+
+
 
 const generateTokenResponse = (user) => {
   if (!user) {
