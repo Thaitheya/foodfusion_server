@@ -74,9 +74,9 @@ router.put(
 
     try {
       const user = await UserModel.findByIdAndUpdate(
-        req.user.id, // Ensure req.user.id is populated correctly by Auth middleware
+        req.user.id,
         { name, address },
-        { new: true } // Return the updated user document
+        { new: true }
       );
 
       if (!user) {
@@ -91,7 +91,33 @@ router.put(
   })
 );
 
+router.put(
+  "/changePassword",
+  Auth,
+  handler(async (req, res) => {
+    const { currentPassword, newPassword } = req.body;
 
+    const user = await UserModel.findById(req.user.id);
+    if (!user) {
+      res.status(BAD_REQUEST).send({ message: "User not found." });
+      return;
+    }
+    const isPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.password
+    );
+    if (!isPasswordValid) {
+      res.status(BAD_REQUEST).send({ message: "Incorrect current password." });
+      return;
+    }
+
+    // Hash the new password and save it
+    user.password = await bcrypt.hash(newPassword, PASSWORD_HASH_SALT);
+    await user.save();
+
+    res.status(SUCCESS).send({ message: "Password changed successfully." });
+  })
+);
 
 const generateTokenResponse = (user) => {
   if (!user) {
@@ -100,7 +126,7 @@ const generateTokenResponse = (user) => {
 
   const token = jwt.sign(
     {
-      id: user._id, // Use MongoDB _id
+      id: user._id,
       email: user.email,
       isAdmin: user.isAdmin,
     },

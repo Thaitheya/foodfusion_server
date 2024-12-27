@@ -2,24 +2,20 @@ const express = require("express");
 const router = express.Router();
 const handler = require("express-async-handler");
 const Razorpay = require("razorpay");
-const crypto = require('crypto')
+const crypto = require("crypto");
 const auth = require("../src/middleware/Auth.mid");
 const { OrderModel } = require("../src/models/Order.model");
+const { UserModel } = require("../src/models/user.model");
 const { OrderStatus } = require("../src/constants/OrderStatus");
+const razorpay = require('../src/config/razorpay.config')
 const {
   BAD_REQUEST,
   SUCCESS,
   NOT_FOUND,
 } = require("../src/constants/httpStatus");
+require("dotenv").config();
 router.use(auth);
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
 router.post("/create", auth, async (req, res) => {
   const { name, address, items } = req.body;
 
@@ -61,49 +57,92 @@ router.post("/create", auth, async (req, res) => {
   }
 });
 
+// const verifyRazorpaySignature = (
+//   razorpay_order_id,
+//   razorpay_payment_id,
+//   razorpay_signature
+// ) => {
+//   const body = `${razorpay_order_id}|${razorpay_payment_id}`;
+//   const expectedSignature = crypto
+//     .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+//     .update(body)
+//     .digest("hex");
+//   return expectedSignature === razorpay_signature;
+// };
+
+// router.post("/verify-payment", async (req, res) => {
+//   const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
+//     req.body;
+
+//   try {
+//     const isValid = verifyRazorpaySignature(req.body);
+
+//     if (!isValid) {
+//       console.error("Signature verification failed");
+//       console.error("Received Data:", req.body);
+//       return res
+//         .status(400)
+//         .send({ message: "Payment signature verification failed." });
+//     }
+
+//     // Update the order status
+//     const order = await OrderModel.findOneAndUpdate(
+//       { razorpay_order_id: razorpay_order_id },
+//       {
+//         razorpay_payment_id: razorpay_payment_id,
+//         razorpay_signature: razorpay_signature,
+//         status: OrderStatus.PAYED,
+//       },
+//       { new: true }
+//     );
+//     if (!order) {
+//       return res.status(404).send({ message: "Order not found." });
+//     }
+
+//     res.send({ message: "Payment verified successfully", order });
+//   } catch (error) {
+//     console.error("Error in processing payment:", error);
+//     res.status(500).send({ message: "Error in processing payment." });
+//   }
+// });
 router.post("/verify-payment", async (req, res) => {
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
     req.body;
 
-  // Validate the signature
-  const isValid = verifyRazorpaySignature(req.body);
+  const body = razorpay_order_id + "|" + razorpay_payment_id;
+  const expectedSignature = crypto
+    .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+    .update(body.toString())
+    .digest("hex");
 
-  if (!isValid) {
-    return res
-      .status(400)
-      .send({ message: "Payment signature verification failed." });
-  }
+  if (expectedSignature === razorpay_signature) {
+    try {
 
-  // If the signature is valid, proceed with the order processing
-  try {
-    const order = await OrderModel.findOneAndUpdate(
-      { razorpay_order_id: razorpay_order_id },
-      {
-        razorpay_payment_id: razorpay_payment_id,
-        razorpay_signature: razorpay_signature,
-        status: "PAID",
-      },
-      { new: true }
-    );
-    res.send({ message: "Payment verified successfully", order });
-  } catch (error) {
-    console.log(error);
-    res.status(500).send({ message: "Error in processing payment." });
+      const order = await OrderModel.findOneAndUpdate(
+        { razorpay_order_id },
+        { razorpay_payment_id, razorpay_signature, status: OrderStatus.PAYED },
+        { new: true }
+      );
+        console.log("Order ID:", razorpay_order_id);
+        console.log("Payment ID:", razorpay_payment_id);
+        console.log("Signature Received:", razorpay_signature);
+        console.log("Expected Signature:", expectedSignature);
+
+      if (!order) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+
+      res.status(200).json({ message: "Payment verified successfully", order });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Failed to update payment status" });
+    }
+  } else {
+    res.status(400).json({ error: "Invalid payment signature" });
   }
 });
 
-const verifyRazorpaySignature = (paymentData) => {
-  const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = paymentData;
-
-  const body = razorpay_order_id + "|" + razorpay_payment_id;
-
-  const generatedSignature = crypto
-    .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-    .update(body)
-    .digest("hex");
-
-  return generatedSignature === razorpay_signature;
-};
+//
 router.put(
   "/pay",
   handler(async (req, res) => {
@@ -132,6 +171,26 @@ router.get(
   })
 );
 
+router.get(
+  "/:status?",
+  handler(async (req, res) => {
+    const status = req.params.status;
+    const user = await UserModel.findById(req.user.id);
+    const filter = {};
+    if (!user.isAdmin) {
+      filter.user = user._id;
+    }
+    if (status) filter.status = status;
+
+    const orders = await OrderModel.find(filter).sort("-createdAt");
+    res.send(orders);
+  })
+);
+
+router.get("/allstatus", (req, res) => {
+  const allStatus = Object.values(OrderStatus);
+  res.send(allStatus);
+});
 const getNewOrderForCurrentUser = async (req) => {
   return await OrderModel.findOne({
     user: req.user.id,

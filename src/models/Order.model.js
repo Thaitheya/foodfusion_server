@@ -59,7 +59,7 @@ orderSchema.pre("save", function (next) {
 
 // Virtual field for formatted total price (e.g., in USD)
 orderSchema.virtual("formattedTotalPrice").get(function () {
-  return `$${this.totalPrice.toFixed(2)}`;
+  return `${this.totalPrice.toFixed(2)}`;
 });
 
 // Export the model

@@ -5,6 +5,7 @@ const foodRouter = require("../routes/Food.routes");
 const userRouter = require("../routes/User.routes");
 const OrderRouter = require("../routes/Order.routes");
 const dbConnect = require("./config/database.config");
+const path = require("path");
 dbConnect();
 const app = express();
 app.use(express.json());
@@ -12,14 +13,16 @@ app.use(express.urlencoded({ extended: false }));
 app.use(
   cors({
     credentials: true,
-    origin: ["http://localhost:5173", "https://foodfusion-server.onrender.com"],
+    origin: [
+      "http://localhost:5173",
+      "https://foodfusion-server.onrender.com/",
+    ],
   })
 );
 
 app.use("/api/foods", foodRouter);
 app.use("/api/users", userRouter);
 app.use("/api/orders", OrderRouter);
-
 const PORT = 5000;
 
 app.listen(PORT, () => {
