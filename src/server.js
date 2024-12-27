@@ -10,12 +10,7 @@ dbConnect();
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(
-  cors({
-    credentials: true,
-    origin: ["https://foodfusion02.netlify.app/"],
-  })
-);
+app.use(cors());
 
 app.use("/api/foods", foodRouter);
 app.use("/api/users", userRouter);
