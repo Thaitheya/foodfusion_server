@@ -45,13 +45,10 @@ router.post(
 
     const user = await UserModel.findOne({ email });
 
-    // Validate user credentials
     if (user && (await bcrypt.compare(password, user.password))) {
       res.send(generateTokenResponse(user));
       return;
     }
-
-    // Invalid credentials
     res
       .status(BAD_REQUEST)
       .json({ message: "Username or Password is invalid" });
@@ -64,7 +61,6 @@ router.put(
   handler(async (req, res) => {
     const { name, address } = req.body;
 
-    // Validate input
     if (!name || name.length < 3) {
       return res.status(BAD_REQUEST).json({ message: "Invalid name" });
     }
@@ -110,8 +106,6 @@ router.put(
       res.status(BAD_REQUEST).send({ message: "Incorrect current password." });
       return;
     }
-
-    // Hash the new password and save it
     user.password = await bcrypt.hash(newPassword, PASSWORD_HASH_SALT);
     await user.save();
 

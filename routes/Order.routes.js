@@ -7,11 +7,10 @@ const auth = require("../src/middleware/Auth.mid");
 const { OrderModel } = require("../src/models/Order.model");
 const { UserModel } = require("../src/models/user.model");
 const { OrderStatus } = require("../src/constants/OrderStatus");
-const razorpay = require('../src/config/razorpay.config')
+const razorpay = require("../src/config/razorpay.config");
 const {
   BAD_REQUEST,
   SUCCESS,
-  NOT_FOUND,
 } = require("../src/constants/httpStatus");
 require("dotenv").config();
 router.use(auth);
@@ -57,54 +56,6 @@ router.post("/create", auth, async (req, res) => {
   }
 });
 
-// const verifyRazorpaySignature = (
-//   razorpay_order_id,
-//   razorpay_payment_id,
-//   razorpay_signature
-// ) => {
-//   const body = `${razorpay_order_id}|${razorpay_payment_id}`;
-//   const expectedSignature = crypto
-//     .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-//     .update(body)
-//     .digest("hex");
-//   return expectedSignature === razorpay_signature;
-// };
-
-// router.post("/verify-payment", async (req, res) => {
-//   const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
-//     req.body;
-
-//   try {
-//     const isValid = verifyRazorpaySignature(req.body);
-
-//     if (!isValid) {
-//       console.error("Signature verification failed");
-//       console.error("Received Data:", req.body);
-//       return res
-//         .status(400)
-//         .send({ message: "Payment signature verification failed." });
-//     }
-
-//     // Update the order status
-//     const order = await OrderModel.findOneAndUpdate(
-//       { razorpay_order_id: razorpay_order_id },
-//       {
-//         razorpay_payment_id: razorpay_payment_id,
-//         razorpay_signature: razorpay_signature,
-//         status: OrderStatus.PAYED,
-//       },
-//       { new: true }
-//     );
-//     if (!order) {
-//       return res.status(404).send({ message: "Order not found." });
-//     }
-
-//     res.send({ message: "Payment verified successfully", order });
-//   } catch (error) {
-//     console.error("Error in processing payment:", error);
-//     res.status(500).send({ message: "Error in processing payment." });
-//   }
-// });
 router.post("/verify-payment", async (req, res) => {
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
     req.body;
@@ -117,16 +68,15 @@ router.post("/verify-payment", async (req, res) => {
 
   if (expectedSignature === razorpay_signature) {
     try {
-
       const order = await OrderModel.findOneAndUpdate(
         { razorpay_order_id },
         { razorpay_payment_id, razorpay_signature, status: OrderStatus.PAYED },
         { new: true }
       );
-        console.log("Order ID:", razorpay_order_id);
-        console.log("Payment ID:", razorpay_payment_id);
-        console.log("Signature Received:", razorpay_signature);
-        console.log("Expected Signature:", expectedSignature);
+      console.log("Order ID:", razorpay_order_id);
+      console.log("Payment ID:", razorpay_payment_id);
+      console.log("Signature Received:", razorpay_signature);
+      console.log("Expected Signature:", expectedSignature);
 
       if (!order) {
         return res.status(404).json({ error: "Order not found" });
@@ -142,7 +92,6 @@ router.post("/verify-payment", async (req, res) => {
   }
 });
 
-//
 router.put(
   "/pay",
   handler(async (req, res) => {
@@ -159,17 +108,20 @@ router.put(
   })
 );
 
-router.get(
-  "/newOrderForCurrentUser",
-  handler(async (req, res) => {
-    const order = await getNewOrderForCurrentUser(req);
-    if (order) {
-      res.status(SUCCESS).send(order);
-    } else {
-      res.status(NOT_FOUND).send({ message: "No new order found" });
-    }
-  })
-);
+router.get("/api/orders/newOrderForCurrentUser", auth, async (req, res) => {
+  try {
+    const order = await OrderModel.findOne({
+      user: req.user.id,
+      status: OrderStatus.NEW,
+    }).sort({ createdAt: -1 });
+    if (!order)
+      return res.status(404).json({ message: "No new orders found." });
+    res.json(order);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch order.", error });
+  }
+});
+
 
 router.get(
   "/:status?",

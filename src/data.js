@@ -9,6 +9,8 @@ const sample_foods = [
     stars: 4.5,
     imageUrl: "food-10.jpg",
     tags: ["Fast Food", "Pizza"],
+    description:
+      "A classic Italian-American favorite with pepperoni slices and melted cheese on a crisp crust.",
   },
   {
     id: "2",
@@ -20,6 +22,8 @@ const sample_foods = [
     stars: 4.0,
     imageUrl: "food-2.jpg",
     tags: ["Fast Food", "Burger"],
+    description:
+      "A juicy grilled beef patty topped with melted cheese, lettuce, and tomato in a toasted bun.",
   },
   {
     id: "3",
@@ -31,6 +35,8 @@ const sample_foods = [
     stars: 4.7,
     imageUrl: "food-3.jpg",
     tags: ["Healthy", "Seafood"],
+    description:
+      "A variety of fresh fish and vegetables wrapped in seasoned rice and seaweed.",
   },
   {
     id: "4",
@@ -42,6 +48,8 @@ const sample_foods = [
     stars: 4.2,
     imageUrl: "food-4.jpg",
     tags: ["Fast Food", "Mexican"],
+    description:
+      "Traditional Mexican dish with seasoned meat, fresh vegetables, and salsa in a soft or crispy shell.",
   },
   {
     id: "5",
@@ -53,6 +61,8 @@ const sample_foods = [
     stars: 4.3,
     imageUrl: "food-5.jpg",
     tags: ["Italian", "Pasta"],
+    description:
+      "Creamy pasta dish made with rich Alfredo sauce and Parmesan cheese, served with herbs.",
   },
   {
     id: "6",
@@ -64,6 +74,8 @@ const sample_foods = [
     stars: 4.0,
     imageUrl: "food-6.jpg",
     tags: ["Healthy", "Salad"],
+    description:
+      "A refreshing salad with romaine lettuce, croutons, Parmesan cheese, and Caesar dressing.",
   },
   {
     id: "7",
@@ -75,6 +87,8 @@ const sample_foods = [
     stars: 4.6,
     imageUrl: "food-7.jpg",
     tags: ["Soup", "Asian"],
+    description:
+      "Japanese noodle soup served with a rich broth, fresh vegetables, and tender meat toppings.",
   },
   {
     id: "8",
@@ -86,6 +100,8 @@ const sample_foods = [
     stars: 4.4,
     imageUrl: "food-8.jpg",
     tags: ["Fast Food", "Chicken"],
+    description:
+      "Crispy and juicy fried chicken, seasoned to perfection and served with a variety of sauces.",
   },
   {
     id: "9",
@@ -97,6 +113,8 @@ const sample_foods = [
     stars: 4.1,
     imageUrl: "food-9.jpg",
     tags: ["Vegetarian", "Asian"],
+    description:
+      "A healthy mix of fresh vegetables stir-fried with savory Asian sauces.",
   },
   {
     id: "10",
@@ -108,6 +126,8 @@ const sample_foods = [
     stars: 4.8,
     imageUrl: "food-101.jpg",
     tags: ["Dessert", "Sweet"],
+    description:
+      "A delightful dessert with scoops of ice cream, chocolate syrup, whipped cream, and a cherry on top.",
   },
 ];
 
@@ -125,6 +145,8 @@ const sample_tags = [
   { name: "Healthy", count: 2 },
   { name: "Soup", count: 1 },
 ];
+
+module.exports = { sample_foods, sample_tags };
 
 const Sample_users = [
   {

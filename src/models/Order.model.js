@@ -7,18 +7,16 @@ const OrderItemSchema = new Schema(
   {
     food: { type: FoodModel.schema, required: true }, // Embed food schema
     price: { type: Number, required: true }, // Price of the item
-    quantity: { type: Number, required: true }, // Quantity of the item
+    quantity: { type: Number, required: true },
   },
   { _id: false }
 );
 
-// Automatically calculate item price before saving
 OrderItemSchema.pre("validate", function (next) {
   this.price = this.food.price * this.quantity;
   next();
 });
 
-// Schema for the entire order
 const orderSchema = new Schema(
   {
     name: { type: String, required: true },
@@ -35,13 +33,13 @@ const orderSchema = new Schema(
       default: OrderStatus.NEW,
     },
     user: {
-      type: Schema.Types.ObjectId, // Reference to the user
+      type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
   },
   {
-    timestamps: true, // Automatically add createdAt and updatedAt fields
+    timestamps: true,
     toJSON: {
       virtuals: true,
     },
@@ -51,18 +49,15 @@ const orderSchema = new Schema(
   }
 );
 
-// Calculate total price before saving the order
 orderSchema.pre("save", function (next) {
   this.totalPrice = this.items.reduce((sum, item) => sum + item.price, 0);
   next();
 });
 
-// Virtual field for formatted total price (e.g., in USD)
 orderSchema.virtual("formattedTotalPrice").get(function () {
-  return `${this.totalPrice.toFixed(2)}`;
+  return `$${this.totalPrice.toFixed(2)}`;
 });
 
-// Export the model
 const OrderModel = model("Order", orderSchema);
 
 module.exports = { OrderModel };
