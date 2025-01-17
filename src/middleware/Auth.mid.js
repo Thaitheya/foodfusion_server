@@ -2,7 +2,7 @@ const { verify } = require("jsonwebtoken");
 const { UNAUTHORIZED } = require("../constants/httpStatus");
 
 const authenticate = (req, res, next) => {
-  const token = req.headers.access;
+  const token = req.header('access')?.replace('Bearer ', '');
   if (!token) return res.status(UNAUTHORIZED).send();
 
   try {
@@ -11,7 +11,6 @@ const authenticate = (req, res, next) => {
   } catch (error) {
     return res.status(UNAUTHORIZED).send();
   }
-
   next();
 };
 

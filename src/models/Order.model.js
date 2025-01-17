@@ -2,11 +2,10 @@ const { model, Schema } = require("mongoose");
 const { OrderStatus } = require("../constants/OrderStatus");
 const { FoodModel } = require("../models/food.model");
 
-// Schema for individual items in the order
 const OrderItemSchema = new Schema(
   {
-    food: { type: FoodModel.schema, required: true }, // Embed food schema
-    price: { type: Number, required: true }, // Price of the item
+    food: { type: FoodModel.schema, required: true },
+    price: { type: Number, required: true },
     quantity: { type: Number, required: true },
   },
   { _id: false }
@@ -23,18 +22,15 @@ const orderSchema = new Schema(
     address: { type: String, required: true },
     paymentId: { type: String },
     totalPrice: { type: Number, required: true },
-    razorpay_order_id: {type: String},
+    razorpay_order_id: { type: String, unique: true, sparse: true },
     razorpay_payment_id: {type:String},
-    razorpay_signature: {type: String},
     items: { type: [OrderItemSchema], required: true },
     status: {
       type: String,
-      enum: Object.values(OrderStatus),
       default: OrderStatus.NEW,
     },
     user: {
       type: Schema.Types.ObjectId,
-      ref: "User",
       required: true,
     },
   },
@@ -55,7 +51,7 @@ orderSchema.pre("save", function (next) {
 });
 
 orderSchema.virtual("formattedTotalPrice").get(function () {
-  return `$${this.totalPrice.toFixed(2)}`;
+  return `₹${this.totalPrice.toFixed(2)}`;
 });
 
 const OrderModel = model("Order", orderSchema);
